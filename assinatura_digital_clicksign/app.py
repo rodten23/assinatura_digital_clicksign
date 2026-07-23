@@ -20,45 +20,74 @@ headers = {
     'Accept': 'application/json'
 }
 
-@app.post('/envelopes')
-def criar_envelope() -> str:
+@app.get('/conta')
+def testar_conta() -> str:
 
-    criar_envelope_url = f'{base_url}/envelopes'
+    testar_conta_url = f'{base_url}/envelopes?access_token={access_token}'
 
-    dados_envelope = json.dumps({
-        'data': {
-            'type': 'envelopes',
-            'atributes': {
-                'name': 'Meu envelope',
-                'locale': 'pt-BR',
-                'auto_close': 'true',
-                'remind_interval': 3,
-                'block_after_refusal': 'true',
-                'deadline_at': '2026-10-20T00:00:00.000-03:00'
-            }
-        }
-    })
-
-    resposta_envelope = httpx.post(
-            url=criar_envelope_url,
-            data=dados_envelope,
-            headers= headers,
-            verify=False
-        )
-
+    resposta_conta = httpx.get(
+        url=testar_conta_url,
+        verify=False)
+    
     with open(
-            './assinatura_digital_clicksign/resposta_envelope.json',
-            'w', encoding='utf-8') as open_file:
+        './assinatura_digital_clicksign/resposta_conta.json',
+        'w', encoding='utf-8') as response_file:
             json.dump(
-                resposta_envelope.json(),
-                open_file,
+                resposta_conta.json(),
+                response_file,
                 ensure_ascii=False,
                 indent=4
             )
-    
-    chave_envelope = resposta_envelope.json()['data']['id']
-    
+
+    with open(
+        './assinatura_digital_clicksign/resposta_conta.json',
+        'r',encoding='utf-8') as open_file:
+            dados_conta = json.load(open_file)
+        
+    chave_envelope = dados_conta['data'][0]['id']
+
     return chave_envelope
+
+
+# @app.post('/envelopes')
+# def criar_envelope() -> str:
+
+#     criar_envelope_url = f'{base_url}/envelopes'
+
+#     dados_envelope = json.dumps({
+#         'data': {
+#             'type': 'envelopes',
+#             'atributes': {
+#                 'name': 'Meu envelope',
+#                 'locale': 'pt-BR',
+#                 'auto_close': 'true',
+#                 'remind_interval': 3,
+#                 'block_after_refusal': 'true',
+#                 'deadline_at': '2026-10-20T00:00:00.000-03:00'
+#             }
+#         }
+#     })
+
+#     resposta_envelope = httpx.post(
+#             url=criar_envelope_url,
+#             data=dados_envelope,
+#             headers= headers,
+#             verify=False
+#         )
+
+#     with open(
+#         './assinatura_digital_clicksign/resposta_envelope.json',
+#         'w', encoding='utf-8') as open_file:
+#         json.dump(
+#             resposta_envelope.json(),
+#             open_file,
+#             ensure_ascii=False,
+#             indent=4
+#         )
+    
+#     chave_envelope = resposta_envelope.json()['data']['id']
+    
+#     return chave_envelope
 
 # @app.post('/criar_signatario')
 # def creation_signer() -> str:
