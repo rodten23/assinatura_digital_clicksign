@@ -1,6 +1,8 @@
 import json
 import os
 
+from datetime import date
+
 import httpx
 from dotenv import load_dotenv
 
@@ -86,9 +88,9 @@ def criar_envelope() -> str:
         )
 
     with open(
-            './assinatura_digital_clicksign/resposta_envelope.json',
-            'r',encoding='utf-8') as open_file:
-                dados_envelope = json.load(open_file)
+        './assinatura_digital_clicksign/resposta_envelope.json',
+        'r',encoding='utf-8') as open_file:
+            dados_envelope = json.load(open_file)
     
     chave_envelope = dados_envelope['data']['id']
     
@@ -155,13 +157,74 @@ def criar_signatario(chave_envelope=criar_envelope()) -> str:
         )
 
     with open(
-                './assinatura_digital_clicksign/resposta_signatario.json',
-                'r',encoding='utf-8') as open_file:
-                    dados_signatario = json.load(open_file)
+        './assinatura_digital_clicksign/resposta_signatario.json',
+        'r',encoding='utf-8') as open_file:
+            dados_signatario = json.load(open_file)
         
     chave_signatario = dados_signatario['data']['id']
+    nome_signatario = dados_signatario['data']['attributes']['name']
+    documento_signatario = dados_signatario['data']['attributes']['documentation']
         
-    return chave_signatario
+    return {'chave': chave_signatario, 'nome': nome_signatario, 'documento': documento_signatario}
+
+
+@app.post('/criar_documento')
+def criar_documento(nome_signatario=criar_signatario()['nome'],
+                    documento_signatario = criar_signatario()['documento'],
+                    chave_envelope=criar_envelope()) -> str:
+    
+    criar_documento_url = f'{base_url}/envelopes/{chave_envelope}/documents'
+
+    data_atual = date.today()
+
+    meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho','Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+
+    body_documento = json.dumps({
+        'data': {
+            'type': 'documents',
+            'attributes': {
+                'filename': 'Contrato_Teste.docx',
+                'template': {
+                    'key': template_id,
+                    'data': {
+                        'enterprise': "Empresa Teste Ltda",
+                        'signer_name': nome_signatario,
+                        'signer_document': documento_signatario,
+                        'created_day_contract': data_atual.day,
+                        'created_month_contract': meses[data_atual.month],
+                        'created_year_contract': data_atual.year
+                    },
+                    'metadata': {}
+                }
+            }
+        }
+    })
+
+    resposta_documento = httpx.post(
+        url=criar_documento_url,
+        data=body_documento,
+        headers=headers,
+        verify=False
+    )
+
+    with open(
+        './assinatura_digital_clicksign/resposta_documento.json',
+        'w', encoding='utf-8') as response_file:
+        json.dump(
+            resposta_documento.json(),
+            response_file,
+            ensure_ascii=False,
+            indent=4
+        )
+
+    with open(
+        './assinatura_digital_clicksign/resposta_documento.json',
+        'r',encoding='utf-8') as open_file:
+            dados_documento = json.load(open_file)
+        
+    chave_documento = dados_documento['data']['id']
+        
+    return chave_documento
 
 
 # @app.post('/criar_contrato')
