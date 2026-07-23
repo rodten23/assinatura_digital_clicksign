@@ -94,51 +94,75 @@ def criar_envelope() -> str:
     
     return chave_envelope
 
-# @app.post('/criar_signatario')
-# def creation_signer() -> str:
+@app.post('/criar_signatario')
+def criar_signatario(chave_envelope=criar_envelope()) -> str:
     
-#     creation_signer_url = f'{base_url}/signers?access_token={access_token}'
+    criar_signatario_url = f'{base_url}/envelopes/{chave_envelope}/signers'
 
-#     signer_data = json.dumps({
-#         'signer': {
-#             'email': 'testador@testador.com',
-#             'phone_number': '11988776655',
-#             'auths': [
-#                 'sms'
-#             ],
-#             'name': 'Testador Que Assina',
-#             'documentation': '123.480.920-69',
-#             'communicate_by': 'email',
-#             'has_documentation': 'true',
-#             'selfie_enabled': 'false',
-#             'handwritten_enabled': 'false',
-#             'location_required_enabled': 'true',
-#             'official_document_enabled': 'false',
-#             'liveness_enabled': 'false',
-#             'facial_biometrics_enabled': 'false'
-#         }
-#     })
+    body_signatario = json.dumps({
+        'data': {
+            'type': 'signers',
+            'attributes': {
+                'name': 'Testador Que Assina',
+                'email': 'rodten23@gmail.com',
+                'birthday': '2000-01-01',
+                'phone_number': '11988776655',
+                'has_documentation': True,
+                'documentation': '123.480.920-69',
+                'refusable': True,
+                'group': 1,
+                'location_required_enabled': False,
+                'communicate_events': {
+                    'signature_request': 'email',
+                    'signature_reminder': 'email',
+                    'document_signed': 'email'                   
+                }
+            }
+        }
+    })
 
-#     signer_response = httpx.post(
-#         url=creation_signer_url,
-#         data=signer_data,
-#         headers=headers,
-#         verify=False
-#     )
+    #         'auths': [
+    #             'sms'
+    #         ],
+            
+    #         'documentation': '123.480.920-69',
+    #         'communicate_by': 'email',
+            
+    #         'selfie_enabled': 'false',
+    #         'handwritten_enabled': 'false',
+    #         
+    #         'official_document_enabled': 'false',
+    #         'liveness_enabled': 'false',
+    #         'facial_biometrics_enabled': 'false'
+    #     }
+    # })
 
-#     with open(
-#         './assinatura_digital_clicksign/signer_response.json',
-#         'w', encoding='utf-8') as open_file:
-#         json.dump(
-#             signer_response.json(),
-#             open_file,
-#             ensure_ascii=False,
-#             indent=4
-#         )
+    resposta_signatario = httpx.post(
+        url=criar_signatario_url,
+        data=body_signatario,
+        headers=headers,
+        verify=False
+    )
 
-#     signer_key = signer_response.json()['signer']['key']
+    with open(
+        './assinatura_digital_clicksign/resposta_signatario.json',
+        'w', encoding='utf-8') as response_file:
+        json.dump(
+            resposta_signatario.json(),
+            response_file,
+            ensure_ascii=False,
+            indent=4
+        )
 
-#     return signer_key
+    with open(
+                './assinatura_digital_clicksign/resposta_signatario.json',
+                'r',encoding='utf-8') as open_file:
+                    dados_signatario = json.load(open_file)
+        
+    chave_signatario = dados_signatario['data']['id']
+        
+    return chave_signatario
+
 
 # @app.post('/criar_contrato')
 # def creation_contract() -> str:
