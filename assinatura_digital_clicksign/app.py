@@ -103,7 +103,6 @@ def ler_envelope():
     return chave_envelope
 
 
-
 @app.post('/criar_signatario')
 def criar_signatario():
 
@@ -126,7 +125,7 @@ def criar_signatario():
                 'name': 'Testador Que Assina',
                 'email': 'rodten23@gmail.com',
                 'birthday': '2000-01-01',
-                'phone_number': '11988776655',
+                'phone_number': '11976198003',
                 'has_documentation': True,
                 'documentation': '123.480.920-69',
                 'refusable': True,
@@ -372,20 +371,20 @@ def definir_autenticacao():
             'type': 'requirements',
             'attributes': {
                 'action': 'provide_evidence',
-                'auth': 'sms',
-                'handwritten': False,
-                'address_proof': False,
-                'liveness': False,
-                'official_document': False,
-                'selfie': False,
-                'facial_biometrics': False,
-                'biometric': False,
-                'icp_brasil': False,
-                'documentscopy': False,
-                'pix': False,
-                'auto_signature': False,
-                'presential': False,
-                'embedded_signature': False        
+                'auth': 'sms'
+                #'handwritten': False,
+                #'address_proof': False,
+                #'liveness': False,
+                #'official_document': False,
+                #'selfie': False,
+                #'facial_biometrics': False,
+                #'biometric': False,
+                #'icp_brasil': False,
+                #'documentscopy': False,
+                #'pix': False,
+                #'auto_signature': False,
+                #'presential': False,
+                #'embedded_signature': False        
             },
             'relationships': {
                 'document': {
@@ -433,4 +432,117 @@ def ler_autenticacao():
     chave_autenticacao = dados_autenticacao['data']['id']
         
     return chave_autenticacao
+
+
+@app.patch('/ativar_envelope')
+def ativar_envelope():
+
+    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json')
+    chave_envelope = ''
+
+    if envelope.is_file():
+        chave_envelope = ler_envelope()
+        
+    else:
+        chave_envelope = criar_envelope()
+        
+    
+    ativar_envelope_url = f'{base_url}/envelopes/{chave_envelope}'
+
+    body_ativacao = json.dumps({
+        'data': {
+            'id': chave_envelope,
+            'type': 'envelopes',
+            'attributes': {
+                'status': 'running',
+                'deadline_at': '2026-10-20T00:00:00.000-03:00',
+                'deadline_partial_signature_action': 'canceled'
+            }
+        }
+    })
+
+    resposta_ativacao = httpx.patch(
+        url=ativar_envelope_url,
+        data=body_ativacao,
+        headers=headers,
+        verify=False
+    )
+
+    with open(
+        './assinatura_digital_clicksign/resposta_ativacao.json',
+        'w', encoding='utf-8') as response_file:
+        json.dump(
+            resposta_ativacao.json(),
+            response_file,
+            ensure_ascii=False,
+            indent=4
+        )
+
+    return ler_ativacao()
+
+def ler_ativacao():
+    with open(
+        './assinatura_digital_clicksign/resposta_ativacao.json',
+        'r',encoding='utf-8') as open_file:
+            dados_ativacao = json.load(open_file)
+        
+    chave_envelope = dados_ativacao['data']['id']
+    status_envelope = dados_ativacao['data']['attributes']['status']
+        
+    return {'chave': chave_envelope, 'status': status_envelope}
+
+
+@app.post('/notificar_assinatura')
+def notificar_assinatura():
+
+    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json')
+    chave_envelope = ''
+
+    if envelope.is_file():
+        chave_envelope = ler_envelope()
+        
+    else:
+        chave_envelope = criar_envelope()
+        
+    
+    notificar_assinatura_url = f'{base_url}/envelopes/{chave_envelope}/notifications'
+
+    body_notificacao = json.dumps({
+        'data': {
+            'type': 'notifications',
+            'attributes': {
+                "message": "Favor, revise e assine este contrato."
+            }
+        }
+    })
+
+    resposta_notificacao = httpx.post(
+        url=notificar_assinatura_url,
+        data=body_notificacao,
+        headers=headers,
+        verify=False
+    )
+
+    with open(
+        './assinatura_digital_clicksign/resposta_notificacao.json',
+        'w', encoding='utf-8') as response_file:
+        json.dump(
+            resposta_notificacao.json(),
+            response_file,
+            ensure_ascii=False,
+            indent=4
+        )
+
+    return ler_notificacao()
+
+def ler_notificacao():
+    with open(
+        './assinatura_digital_clicksign/resposta_notificacao.json',
+        'r',encoding='utf-8') as open_file:
+            dados_notificacao = json.load(open_file)
+        
+    chave_notificacao = dados_notificacao['data']['id']
+    mensagem_notificacao = dados_notificacao['data']['attributes']['message']
+        
+    return {'chave': chave_notificacao, 'mensagem': mensagem_notificacao}
 
