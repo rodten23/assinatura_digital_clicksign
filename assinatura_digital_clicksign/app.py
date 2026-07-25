@@ -287,8 +287,8 @@ def qualificar_sig_doc():
         'data': {
             'type': 'requirements',
             'attributes': {
-                "action": "agree",
-                "role": "sign"
+                'action': 'agree',
+                'role': 'partner'
             },
             'relationships': {
                 'document': {
@@ -456,7 +456,7 @@ def ativar_envelope():
             'attributes': {
                 'status': 'running',
                 'deadline_at': '2026-10-20T00:00:00.000-03:00',
-                'deadline_partial_signature_action': 'canceled'
+                #'deadline_partial_signature_action': 'canceled'
             }
         }
     })
