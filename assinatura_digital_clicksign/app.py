@@ -130,7 +130,7 @@ def criar_signatario():
                 'documentation': '123.480.920-69',
                 'refusable': True,
                 'group': 1,
-                'location_required_enabled': False,
+                'location_required_enabled': True,
                 'communicate_events': {
                     'signature_request': 'email',
                     'signature_reminder': 'email',
@@ -336,6 +336,91 @@ def ler_qualificacao():
     chave_qualificacao = dados_qualificacao['data']['id']
         
     return chave_qualificacao
+
+
+@app.post('/definir_rubrica')
+def definir_rubrica():
+    
+    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json')
+    documento=Path('./assinatura_digital_clicksign/resposta_documento.json')
+    signatario=Path('./assinatura_digital_clicksign/resposta_signatario.json')
+    chave_envelope = ''
+    chave_documento = ''
+    chave_signatario = ''
+    
+    if envelope.is_file():
+        chave_envelope = ler_envelope()      
+    else:
+        chave_envelope = criar_envelope()
+
+    if documento.is_file():
+        chave_documento = ler_documento()                
+    else:
+        chave_documento = criar_documento()    
+    
+    if signatario.is_file():
+        chave_signatario = ler_signatario()['chave']            
+    else:
+        chave_signatario = criar_signatario()['chave']
+
+    
+    definir_rubrica_url = f'{base_url}/envelopes/{chave_envelope}/requirements'
+
+    body_rubrica = json.dumps({
+        'data': {
+            'type': 'requirements',
+            'attributes': {
+                'action': 'rubricate',
+                'pages': 'all',
+                'kind': 'manuscript',
+                'rubric_field': 'position_sign_signer'
+            },
+            'relationships': {
+                'document': {
+                    'data': {
+                        'type': 'documents',
+                        'id': chave_documento
+                    }
+                },
+                'signer': {
+                    'data': {
+                        'type': 'signers',
+                        'id': chave_signatario
+                    }
+                }
+            }
+        }
+    })
+
+    resposta_definir_rubrica = httpx.post(
+        url=definir_rubrica_url,
+        data=body_rubrica,
+        headers=headers,
+        verify=False
+    )
+
+    with open(
+        './assinatura_digital_clicksign/resposta_definir_rubrica.json',
+        'w', encoding='utf-8') as response_file:
+        json.dump(
+            resposta_definir_rubrica.json(),
+            response_file,
+            ensure_ascii=False,
+            indent=4
+        )
+
+    return ler_rubrica()
+
+
+def ler_rubrica():
+    with open(
+        './assinatura_digital_clicksign/resposta_definir_rubrica.json',
+        'r',encoding='utf-8') as open_file:
+            dados_rubrica = json.load(open_file)
+        
+    chave_rubrica = dados_rubrica['data']['id']
+        
+    return chave_rubrica
 
 
 @app.post('/definir_autenticacao')
