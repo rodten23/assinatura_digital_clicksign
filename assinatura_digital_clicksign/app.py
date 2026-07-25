@@ -3,7 +3,7 @@ import os
 
 from pathlib import Path
 
-from datetime import date
+import datetime as dt
 
 import httpx
 from dotenv import load_dotenv
@@ -58,6 +58,11 @@ def criar_envelope():
 
     criar_envelope_url = f'{base_url}/envelopes'
 
+    data_atual = dt.date.today()
+    hora_zerada = dt.time(0,0,0,0)
+    data_futura = data_atual + dt.timedelta(days=30)
+    data_limite = f'{data_futura}T{hora_zerada}.000-03:00'
+
     body_envelope = json.dumps({
         'data': {
             'type': 'envelopes',
@@ -67,7 +72,7 @@ def criar_envelope():
                 'auto_close': True,
                 'remind_interval': 3,
                 'block_after_refusal': True,
-                'deadline_at': '2026-10-20T00:00:00.000-03:00'
+                'deadline_at': data_limite
             }
         }
     })
@@ -199,7 +204,7 @@ def criar_documento():
     
     criar_documento_url = f'{base_url}/envelopes/{chave_envelope}/documents'
 
-    data_atual = date.today()
+    data_atual = dt.date.today()
 
     meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho','Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
@@ -456,20 +461,7 @@ def definir_autenticacao():
             'type': 'requirements',
             'attributes': {
                 'action': 'provide_evidence',
-                'auth': 'sms'
-                #'handwritten': False,
-                #'address_proof': False,
-                #'liveness': False,
-                #'official_document': False,
-                #'selfie': False,
-                #'facial_biometrics': False,
-                #'biometric': False,
-                #'icp_brasil': False,
-                #'documentscopy': False,
-                #'pix': False,
-                #'auto_signature': False,
-                #'presential': False,
-                #'embedded_signature': False        
+                'auth': 'email'       
             },
             'relationships': {
                 'document': {
@@ -534,14 +526,19 @@ def ativar_envelope():
     
     ativar_envelope_url = f'{base_url}/envelopes/{chave_envelope}'
 
+    data_atual = dt.date.today()
+    hora_zerada = dt.time(0,0,0,0)
+    data_futura = data_atual + dt.timedelta(days=30)
+    data_limite = f'{data_futura}T{hora_zerada}.000-03:00'
+
     body_ativacao = json.dumps({
         'data': {
             'id': chave_envelope,
             'type': 'envelopes',
             'attributes': {
                 'status': 'running',
-                'deadline_at': '2026-10-20T00:00:00.000-03:00',
-                #'deadline_partial_signature_action': 'canceled'
+                'deadline_at': data_limite,
+                'deadline_partial_signature_action': 'canceled'
             }
         }
     })
