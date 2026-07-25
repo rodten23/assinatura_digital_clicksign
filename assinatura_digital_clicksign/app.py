@@ -25,7 +25,7 @@ headers = {
 }
 
 @app.get('/conta')
-def testar_conta() -> str:
+def testar_conta():
 
     testar_conta_url = f'{base_url}/envelopes?access_token={access_token}'
 
@@ -54,7 +54,7 @@ def testar_conta() -> str:
 
 
 @app.post('/envelopes')
-def criar_envelope() -> str:
+def criar_envelope():
 
     criar_envelope_url = f'{base_url}/envelopes'
 
@@ -105,8 +105,9 @@ def ler_envelope():
 
 
 @app.post('/criar_signatario')
-def criar_signatario(envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json')) -> str:
+def criar_signatario():
 
+    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json')
     chave_envelope = ''
 
     if envelope.is_file():
@@ -139,22 +140,6 @@ def criar_signatario(envelope=Path('./assinatura_digital_clicksign/resposta_enve
             }
         }
     })
-
-    #         'auths': [
-    #             'sms'
-    #         ],
-            
-    #         'documentation': '123.480.920-69',
-    #         'communicate_by': 'email',
-            
-    #         'selfie_enabled': 'false',
-    #         'handwritten_enabled': 'false',
-    #         
-    #         'official_document_enabled': 'false',
-    #         'liveness_enabled': 'false',
-    #         'facial_biometrics_enabled': 'false'
-    #     }
-    # })
 
     resposta_signatario = httpx.post(
         url=criar_signatario_url,
@@ -189,9 +174,10 @@ def ler_signatario():
 
 
 @app.post('/criar_documento')
-def criar_documento(
-    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json'),signatario=Path('./assinatura_digital_clicksign/resposta_signatario.json')) -> str:
+def criar_documento():
 
+    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json')
+    signatario=Path('./assinatura_digital_clicksign/resposta_signatario.json')
     chave_envelope = ''
     nome_signatario = ''
     documento_signatario = ''
@@ -271,12 +257,11 @@ def ler_documento():
 
 
 @app.post('/qualificar_signatario_documento')
-def qualificar_sig_doc(
-    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json'),
-    documento=Path('./assinatura_digital_clicksign/resposta_documento.json'),
-    signatario=Path('./assinatura_digital_clicksign/resposta_signatario.json')) -> str:
+def qualificar_sig_doc():
     
-
+    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json')
+    documento=Path('./assinatura_digital_clicksign/resposta_documento.json')
+    signatario=Path('./assinatura_digital_clicksign/resposta_signatario.json')
     chave_envelope = ''
     chave_documento = ''
     chave_signatario = ''
@@ -352,3 +337,100 @@ def ler_qualificacao():
     chave_qualificacao = dados_qualificacao['data']['id']
         
     return chave_qualificacao
+
+
+@app.post('/definir_autenticacao')
+def definir_autenticacao():
+    
+    envelope=Path('./assinatura_digital_clicksign/resposta_envelope.json')
+    documento=Path('./assinatura_digital_clicksign/resposta_documento.json')
+    signatario=Path('./assinatura_digital_clicksign/resposta_signatario.json')
+    chave_envelope = ''
+    chave_documento = ''
+    chave_signatario = ''
+    
+    if envelope.is_file():
+        chave_envelope = ler_envelope()      
+    else:
+        chave_envelope = criar_envelope()
+
+    if documento.is_file():
+        chave_documento = ler_documento()                
+    else:
+        chave_documento = criar_documento()    
+    
+    if signatario.is_file():
+        chave_signatario = ler_signatario()['chave']            
+    else:
+        chave_signatario = criar_signatario()['chave']
+
+    
+    definir_autenticacao_url = f'{base_url}/envelopes/{chave_envelope}/requirements'
+
+    body_autenticacao = json.dumps({
+        'data': {
+            'type': 'requirements',
+            'attributes': {
+                'action': 'provide_evidence',
+                'auth': 'sms',
+                'handwritten': False,
+                'address_proof': False,
+                'liveness': False,
+                'official_document': False,
+                'selfie': False,
+                'facial_biometrics': False,
+                'biometric': False,
+                'icp_brasil': False,
+                'documentscopy': False,
+                'pix': False,
+                'auto_signature': False,
+                'presential': False,
+                'embedded_signature': False        
+            },
+            'relationships': {
+                'document': {
+                    'data': {
+                        'type': 'documents',
+                        'id': chave_documento
+                    }
+                },
+                'signer': {
+                    'data': {
+                        'type': 'signers',
+                        'id': chave_signatario
+                    }
+                }
+            }
+        }
+    })
+
+    resposta_definir_autenticacao = httpx.post(
+        url=definir_autenticacao_url,
+        data=body_autenticacao,
+        headers=headers,
+        verify=False
+    )
+
+    with open(
+        './assinatura_digital_clicksign/resposta_definir_autenticacao.json',
+        'w', encoding='utf-8') as response_file:
+        json.dump(
+            resposta_definir_autenticacao.json(),
+            response_file,
+            ensure_ascii=False,
+            indent=4
+        )
+
+    return ler_autenticacao()
+
+
+def ler_autenticacao():
+    with open(
+        './assinatura_digital_clicksign/resposta_definir_autenticacao.json',
+        'r',encoding='utf-8') as open_file:
+            dados_autenticacao = json.load(open_file)
+        
+    chave_autenticacao = dados_autenticacao['data']['id']
+        
+    return chave_autenticacao
+
